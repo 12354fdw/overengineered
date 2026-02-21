@@ -1,7 +1,6 @@
 import { LoadingController } from "client/controller/LoadingController";
 import { AlertPopup } from "client/gui/popup/AlertPopup";
 import { TextPopup } from "client/gui/popup/TextPopup";
-import { BlocksSerializer } from "shared/building/BlocksSerializer";
 import { ConfirmPopup } from "client/gui/popup/ConfirmPopup";
 import { SaveHistoryPopup } from "client/gui/popup/SaveHistory";
 import { Action } from "engine/client/Action";
@@ -19,12 +18,11 @@ import { GameDefinitions } from "shared/data/GameDefinitions";
 import { Serializer } from "shared/Serializer";
 import { SlotsMeta } from "shared/SlotsMeta";
 import type { PopupController } from "client/gui/PopupController";
-import type { PlayerDataStorage } from "client/PlayerDataStorage";
+import { PlayerDataStorage } from "client/PlayerDataStorage";
 import type { Theme } from "client/Theme";
 import type { ReadonlyObservableValue } from "engine/shared/event/ObservableValue";
 import type { ReadonlyPlot } from "shared/building/ReadonlyPlot";
-import { JSON } from "engine/shared/fixes/Json";
-import type { BuildingPlot } from "shared/building/BuildingPlot";
+
 interface SlotMetaLike {
 	readonly index: number;
 	readonly order: number | undefined;
@@ -162,13 +160,19 @@ class SaveItem extends PartialControl<SaveItemParts, SaveItemDefinition> impleme
 						name,
 					});
 				});
-				this.shareCode.subscribe(() => {
-					const obj = BlocksSerializer.serializeToObject(plot);
-					const json = BlocksSerializer.objectToJson(obj);
-					const shareCode = JSON.serialize(json);;
-
+				this.shareCode.subscribe( async () => {
+					const slot = meta.get();
+					const response = await playerData.getShareCode(slot);
+					if (!response.success === true) return;
+					const code = response.shareCode;
 					popupController.showPopup(
-						new TextPopup("SHARECODE (CTRL + A, then CTRL + C)","sharecode here lol", () => {}, () => {},shareCode)
+						new TextPopup(
+							"SHARECODE (CTRL + A, then CTRL + C)",
+							"sharecode here lol",
+							() => {},
+							() => {},
+							code,
+						),
 					);
 				});
 

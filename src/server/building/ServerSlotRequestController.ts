@@ -7,6 +7,8 @@ import type { SlotDatabase } from "server/database/SlotDatabase";
 import type { PlayerId } from "server/PlayerId";
 import type { BuildingPlot } from "shared/building/BuildingPlot";
 import type { PlayerDataStorageRemotesSlots } from "shared/remotes/PlayerDataRemotes";
+import { Base64 } from "@rbxts/crypto";
+import { Zlib } from "@rbxts/zlib";
 
 export interface SlotHistoryLoader {
 	readonly loadSlotHistory: (
@@ -45,7 +47,8 @@ export class ServerSlotRequestController extends Component {
 		slotRemotes.load.subscribe((p, arg) => this.loadSlot(arg));
 		slotRemotes.save.subscribe((p, arg) => this.saveSlot(arg));
 		slotRemotes.delete.subscribe((p, arg) => this.deleteSlot(arg));
-		slotRemotes.loadFromShareCode.subscribe((p, arg) => this.loadFromShareCode(arg))
+		slotRemotes.loadFromShareCode.subscribe((p, arg) => this.loadFromShareCode(arg));
+		slotRemotes.getShareCode.subscribe((p, arg) => this.getShareCode(arg));
 	}
 
 	private saveSlot(request: PlayerSaveSlotRequest): SaveSlotResponse {
@@ -112,10 +115,17 @@ export class ServerSlotRequestController extends Component {
 
 		return { success: true, isEmpty: dblocks === 0 };
 	}
+	private getShareCode(slot: SlotMeta): GetShareCodeResponse {
+		const blocks = this.slots.getBlocks(this.playerId, slot.index);
+		const json = BlocksSerializer.objectToJson(blocks);
+		const raw = JSON.serialize(json);
 
+		const compressed = Zlib.Compress(raw);
+		const shareCode = Base64.Encode(compressed);
+
+		return { success: true, shareCode: shareCode };
+	}
 	private loadFromShareCode(code: string): LoadSlotResponse {
-		const start = os.clock();
-
 		if (!code || code.size() === 0) {
 			return { success: false, message: "Invalid share code" };
 		}
@@ -123,7 +133,9 @@ export class ServerSlotRequestController extends Component {
 		this.blocks.deleteOperation.execute("all");
 
 		$log(`Deserializing share code`);
-		const json = JSON.deserialize(code) as BlocksSerializer.JsonSerializedBlocks;
+		const compressed = Base64.Decode(code);
+		const raw = Zlib.Decompress(compressed);
+		const json = JSON.deserialize(raw) as BlocksSerializer.JsonSerializedBlocks;
 		const obj = BlocksSerializer.jsonToObject(json);
 
 		$log("Loading slot from share code");

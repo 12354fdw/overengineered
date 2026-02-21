@@ -17,6 +17,11 @@ declare global {
 		readonly isEmpty: boolean;
 	}>;
 
+	type GetShareCodeResponse = Response<{
+		readonly success: boolean;
+		readonly shareCode: string;
+	}>;
+
 	type SlotHistoryPart = {
 		readonly id: string;
 		readonly slotId: string;
