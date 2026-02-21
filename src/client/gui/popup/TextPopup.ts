@@ -24,7 +24,13 @@ export class TextPopup extends Control<TextPopupDefinition> {
 	private readonly doneButton;
 	private readonly closeButton;
 
-	constructor(text: string, ps: string = "", okFunc: (text: string) => void, noFunc: () => void) {
+	constructor(
+		text: string,
+		ps: string = "",
+		okFunc: (text: string) => void,
+		noFunc: () => void,
+		defaultText: string = "",
+	) {
 		const gui = Interface.getInterface<{ Popups: { TextInput: TextPopupDefinition } }>().Popups.TextInput.Clone();
 		super(gui);
 
@@ -33,6 +39,7 @@ export class TextPopup extends Control<TextPopupDefinition> {
 
 		gui.Heading.TitleLabel.Text = text;
 		gui.Content.Frame.ScrollingFrame.TextBox.PlaceholderText = ps;
+		gui.Content.Frame.ScrollingFrame.TextBox.Text = defaultText;
 		this.event.subscribe(this.doneButton.activated, () => {
 			okFunc(gui.Content.Frame.ScrollingFrame.TextBox.Text);
 			this.hide();

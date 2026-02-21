@@ -2,6 +2,7 @@
   <Item class="Sound" referent="0">
     <Properties>
       <string name="Name">Calm Space (a)</string>
+      <bool name="AcousticSimulationEnabled">true</bool>
       <BinaryString name="AttributesSerialize"></BinaryString>
       <Content name="AudioContent">
         <uri>rbxassetid://9042041852</uri>

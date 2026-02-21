@@ -12,6 +12,7 @@
     <Item class="Sound" referent="1">
       <Properties>
         <string name="Name">Glass Break 2</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://7140152893</uri>
@@ -39,6 +40,7 @@
     <Item class="Sound" referent="2">
       <Properties>
         <string name="Name">Glass Break</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://2676503368</uri>
@@ -66,6 +68,7 @@
     <Item class="Sound" referent="3">
       <Properties>
         <string name="Name">Break</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://132758217</uri>
@@ -93,6 +96,7 @@
     <Item class="Sound" referent="4">
       <Properties>
         <string name="Name">(TF2) Wrench Hit</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://5909769329</uri>
@@ -120,6 +124,7 @@
     <Item class="Sound" referent="5">
       <Properties>
         <string name="Name">land</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://268933841</uri>
@@ -147,6 +152,7 @@
     <Item class="Sound" referent="6">
       <Properties>
         <string name="Name">Pipe Drops Clanking Impacts Ringing 17 (SFX)</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://9117380262</uri>
@@ -174,6 +180,7 @@
     <Item class="Sound" referent="7">
       <Properties>
         <string name="Name">Glass Breaks 4 (SFX)</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://9114591567</uri>
@@ -201,6 +208,7 @@
     <Item class="Sound" referent="8">
       <Properties>
         <string name="Name">glassshatter3</string>
+        <bool name="AcousticSimulationEnabled">true</bool>
         <BinaryString name="AttributesSerialize"></BinaryString>
         <Content name="AudioContent">
           <uri>rbxassetid://5688352150</uri>

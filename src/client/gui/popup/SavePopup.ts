@@ -1,5 +1,7 @@
 import { LoadingController } from "client/controller/LoadingController";
 import { AlertPopup } from "client/gui/popup/AlertPopup";
+import { TextPopup } from "client/gui/popup/TextPopup";
+import { BlocksSerializer } from "shared/building/BlocksSerializer";
 import { ConfirmPopup } from "client/gui/popup/ConfirmPopup";
 import { SaveHistoryPopup } from "client/gui/popup/SaveHistory";
 import { Action } from "engine/client/Action";
@@ -21,7 +23,8 @@ import type { PlayerDataStorage } from "client/PlayerDataStorage";
 import type { Theme } from "client/Theme";
 import type { ReadonlyObservableValue } from "engine/shared/event/ObservableValue";
 import type { ReadonlyPlot } from "shared/building/ReadonlyPlot";
-
+import { JSON } from "engine/shared/fixes/Json";
+import type { BuildingPlot } from "shared/building/BuildingPlot";
 interface SlotMetaLike {
 	readonly index: number;
 	readonly order: number | undefined;
@@ -37,6 +40,7 @@ interface CurrentItem {
 	readonly load: Action;
 	readonly delete: Action;
 	readonly openHistory: Action;
+	readonly shareCode: Action;
 
 	readonly setColor: Action<[color: Color3]>;
 	readonly setName: Action<[name: string]>;
@@ -72,6 +76,7 @@ class SaveItem extends PartialControl<SaveItemParts, SaveItemDefinition> impleme
 	readonly setColor: Action<[color: Color3]>;
 	readonly setName: Action<[name: string]>;
 	readonly meta: ObservableValue<SlotMeta>;
+	readonly shareCode: Action;
 
 	constructor(
 		gui: SaveItemDefinition,
@@ -84,6 +89,10 @@ class SaveItem extends PartialControl<SaveItemParts, SaveItemDefinition> impleme
 		this.save = this.parent(new Action()) //
 			.subCanExecuteFrom({ can: this.event.addObservable(meta.fReadonlyCreateBased(isWritable)) });
 		this.load = this.parent(new Action());
+		this.shareCode = this.parent(new Action()) //
+		.subCanExecuteFrom({
+			can: this.event.addObservable(meta.fReadonlyCreateBased((c) => !SlotsMeta.isTestSlot(c.index))),
+		});
 		this.delete = this.parent(new Action()) //
 			.subCanExecuteFrom({
 				can: this.event.addObservable(
@@ -127,6 +136,7 @@ class SaveItem extends PartialControl<SaveItemParts, SaveItemDefinition> impleme
 							});
 						});
 					};
+	
 
 					const slot = meta.get();
 					if (slot.blocks === 0) {
@@ -151,6 +161,15 @@ class SaveItem extends PartialControl<SaveItemParts, SaveItemDefinition> impleme
 						save: false,
 						name,
 					});
+				});
+				this.shareCode.subscribe(() => {
+					const obj = BlocksSerializer.serializeToObject(plot);
+					const json = BlocksSerializer.objectToJson(obj);
+					const shareCode = JSON.serialize(json);;
+
+					popupController.showPopup(
+						new TextPopup("SHARECODE (CTRL + A, then CTRL + C)","sharecode here lol", () => {}, () => {},shareCode)
+					);
 				});
 
 				this.delete.subscribe(() => {
@@ -240,12 +259,15 @@ class NewSaveItem extends Control<GuiButton> implements CurrentItem {
 	readonly openHistory: Action;
 	readonly setColor: Action<[color: Color3]>;
 	readonly setName: Action<[name: string]>;
+	readonly shareCode: Action;
 
 	constructor(gui: GuiButton, current: ObservableValue<CurrentItem | undefined>, playerData: PlayerDataStorage) {
 		super(gui);
 
 		this.save = this.parent(new Action());
 		this.load = this.parent(new Action()) //
+			.subCanExecuteFrom({ can: new ObservableValue(false) });
+		this.shareCode = this.parent(new Action()) //
 			.subCanExecuteFrom({ can: new ObservableValue(false) });
 		this.delete = this.parent(new Action()) //
 			.subCanExecuteFrom({ can: new ObservableValue(false) });
@@ -327,12 +349,18 @@ export type SaveBottomDefinition = GuiObject & {
 		readonly ImageLabel: ImageLabel;
 		readonly Delete: GuiButton;
 		readonly History: GuiButton;
+		readonly ShareCode: GuiButton;
 	};
 	readonly Colors: GuiObject;
 };
 export class SaveBottom extends Control<SaveBottomDefinition> {
 	constructor(gui: SaveBottomDefinition, current: ReadonlyObservableValue<CurrentItem | undefined>) {
 		super(gui);
+
+		const shareCodeAction = this.parent(new Action()) //
+			.subscribeActionObservable(this.event.addObservable(current.fReadonlyCreateBased((c) => c?.shareCode)));
+		this.parent(new Control(gui.Head.ShareCode)) //
+			.subscribeToAction(shareCodeAction);
 
 		const deleteAction = this.parent(new Action()) //
 			.subscribeActionObservable(this.event.addObservable(current.fReadonlyCreateBased((c) => c?.delete)));
@@ -396,9 +424,42 @@ export class SaveBottom extends Control<SaveBottomDefinition> {
 		);
 	}
 }
+class FromShareCode extends Control<GuiButton> {
+	//readonly meta: ReadonlyObservableValue<SlotMetaLike>;
+	readonly fromShareCode: Action;
 
+	constructor(gui: GuiButton, current: ObservableValue<CurrentItem | undefined>) {
+		super(gui);
+
+		this.fromShareCode = this.parent(new Action());
+		this.addButtonAction(() => this.fromShareCode.execute());
+
+		this.$onInjectAuto((popupController: PopupController, playerData: PlayerDataStorage) => {
+			this.fromShareCode.subscribe(() => {
+				const comfirm = () => {
+					const okFunc = (code: string) => {
+						if (!code || code.size() === 0) {
+							popupController.showPopup(new AlertPopup("Invalid Share code!"));
+							return;
+						}
+
+						LoadingController.run("Loading from Share code...", async () => {
+							const response = await playerData.loadFromShareCode(code);
+							if (!response.success) {
+								popupController.showPopup(new AlertPopup(response.message ?? "Invalid Share code!"));
+							}
+						});
+					};
+					popupController.showPopup(new TextPopup("INSERT SHARECODE", "sharecode", okFunc, () => {}));
+				};
+				popupController.showPopup(new ConfirmPopup("Load from share code?", "YOU WILL REGRET THIS", comfirm));
+			});
+		});
+	}
+}
 type SaveSlotsDefinition = ScrollingFrame & {
 	readonly NewSlotButton: GuiButton;
+	readonly FromShareCode: GuiButton;
 	readonly SlotTemplate: SaveItemDefinition;
 };
 class SaveSlots extends Control<SaveSlotsDefinition> {
@@ -412,6 +473,7 @@ class SaveSlots extends Control<SaveSlotsDefinition> {
 		this.current = current;
 
 		this.parent(new NewSaveItem(gui.NewSlotButton, current, playerData));
+		this.parent(new FromShareCode(gui.FromShareCode, current));
 
 		const template = this.asTemplate(gui.SlotTemplate, true);
 
@@ -493,6 +555,7 @@ type SlotsPopupParts = {
 
 	readonly SaveButton: GuiButton;
 	readonly LoadButton: GuiButton;
+	readonly ShareCodeButton: GuiButton;
 };
 
 export class SavePopup extends PartialControl<SlotsPopupParts> {
@@ -517,6 +580,11 @@ export class SavePopup extends PartialControl<SlotsPopupParts> {
 				.subscribeActionObservable(
 					this.event.addObservable(slots.current.fReadonlyCreateBased((c) => c?.load ?? new Action())),
 				);
+
+			const shareCodeACtion = this.parent(new Action()) //
+				.subscribeActionObservable(
+					this.event.addObservable(slots.current.fReadonlyCreateBased((c) => c?.shareCode ?? new Action())),
+				)
 
 			this.parent(new Control(this.parts.SaveButton)) //
 				.subscribeToAction(saveAction);

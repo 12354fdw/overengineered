@@ -191,4 +191,7 @@ export class PlayerDataStorage {
 			return response;
 		});
 	}
+	async loadFromShareCode(code: string): Promise<LoadSlotResponse> {
+		return this.slotRemotes.loadFromShareCode.send(code);
+	}
 }

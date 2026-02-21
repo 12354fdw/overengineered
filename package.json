@@ -35,6 +35,7 @@
 	"dependencies": {
 		"@rbxts/crypto": "^1.2.1",
 		"@rbxts/net": "^3.0.10",
-		"@rbxts/services": "^1.6.0"
+		"@rbxts/services": "^1.6.0",
+		"chalk": "^4.1.2"
 	}
 }

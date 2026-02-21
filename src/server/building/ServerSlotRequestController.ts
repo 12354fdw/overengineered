@@ -1,6 +1,7 @@
 import { Component } from "engine/shared/component/Component";
 import { BlocksSerializer } from "shared/building/BlocksSerializer";
 import { SlotsMeta } from "shared/SlotsMeta";
+import { JSON } from "engine/shared/fixes/Json";
 import type { PlayerDatabase } from "server/database/PlayerDatabase";
 import type { SlotDatabase } from "server/database/SlotDatabase";
 import type { PlayerId } from "server/PlayerId";
@@ -44,6 +45,7 @@ export class ServerSlotRequestController extends Component {
 		slotRemotes.load.subscribe((p, arg) => this.loadSlot(arg));
 		slotRemotes.save.subscribe((p, arg) => this.saveSlot(arg));
 		slotRemotes.delete.subscribe((p, arg) => this.deleteSlot(arg));
+		slotRemotes.loadFromShareCode.subscribe((p, arg) => this.loadFromShareCode(arg))
 	}
 
 	private saveSlot(request: PlayerSaveSlotRequest): SaveSlotResponse {
@@ -107,6 +109,26 @@ export class ServerSlotRequestController extends Component {
 		$log(`Loading ${userid}'s slot ${index}`);
 		const dblocks = BlocksSerializer.deserializeFromObject(blocks, this.blocks, this.blockList);
 		$log(`Loaded ${userid} slot ${index} in ${os.clock() - start}`);
+
+		return { success: true, isEmpty: dblocks === 0 };
+	}
+
+	private loadFromShareCode(code: string): LoadSlotResponse {
+		const start = os.clock();
+
+		if (!code || code.size() === 0) {
+			return { success: false, message: "Invalid share code" };
+		}
+
+		this.blocks.deleteOperation.execute("all");
+
+		$log(`Deserializing share code`);
+		const json = JSON.deserialize(code) as BlocksSerializer.JsonSerializedBlocks;
+		const obj = BlocksSerializer.jsonToObject(json);
+
+		$log("Loading slot from share code");
+		const dblocks = BlocksSerializer.deserializeFromObject(obj, this.blocks, this.blockList);
+		$log("Loaded slot from share code");
 
 		return { success: true, isEmpty: dblocks === 0 };
 	}
