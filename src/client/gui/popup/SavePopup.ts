@@ -443,7 +443,7 @@ class FromShareCode extends Control<GuiButton> {
 				const comfirm = () => {
 					const okFunc = (code: string) => {
 						if (!code || code.size() === 0) {
-							popupController.showPopup(new AlertPopup("Invalid Share code!"));
+							popupController.showPopup(new AlertPopup("Invalid Share code!", () => {}, 0));
 							return;
 						}
 

@@ -78,7 +78,7 @@ export class ServerBuildingRequestController extends Component {
 				!PlayerRank.isAdminById(this.playerId) &&
 				!(b.requiredFeatures ?? Objects.empty).all((c) => (dbp.features ?? Objects.empty).contains(c))
 			) {
-				return err(`Not enough permissions to place ${b.id}`);
+				//return err(`Not enough permissions to place ${b.id}`);
 			}
 
 			if (
